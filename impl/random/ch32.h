@@ -1,27 +1,27 @@
 #if defined(CH32V30x_D8) || defined(CH32V30x_D8C)
-#include <ch32v30x_rng.h>
 #else
 # error CH32 implementation missing!
 #endif
 
+__attribute__((weak))
+void hydro_ch32v_init_random(void);
+
+__attribute__((weak))
+uint32_t hydro_ch32v_get_random_number(void);
+
 static int
 hydro_random_init(void)
 {
-    // Enable RNG clock source
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_RNG, ENABLE);
-
-    // RNG Peripheral enable
-    RNG_Cmd(ENABLE);
-
     const char       ctx[hydro_hash_CONTEXTBYTES] = { 'h', 'y', 'd', 'r', 'o', 'P', 'R', 'G' };
     hydro_hash_state st;
     uint16_t         ebits = 0;
 
+    hydro_ch32v_init_random();
+
     hydro_hash_init(&st, ctx, NULL);
 
     while (ebits < 256) {
-        while (RNG_GetFlagStatus(RNG_FLAG_DRDY) == RESET);
-        uint32_t r = RNG_GetRandomNumber();
+        uint32_t r = hydro_ch32v_get_random_number();
 
         hydro_hash_update(&st, (const uint32_t *) &r, sizeof r);
         ebits += 32;
